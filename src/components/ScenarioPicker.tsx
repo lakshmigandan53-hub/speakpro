@@ -24,9 +24,13 @@ import {
   ShieldAlert,
   RotateCcw,
   CheckCircle2,
+  Volume2,
+  Mic,
+  Radio,
 } from 'lucide-react';
 import { TinderScenarioSlider } from './TinderScenarioSlider';
 import { VisualTranslateModal } from './VisualTranslateModal';
+import { VoiceMessageLabModal } from './VoiceMessageLabModal';
 import { LevelsView } from './LevelsView';
 import { ProfilePerformanceView } from './ProfilePerformanceView';
 
@@ -62,6 +66,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
 
   // Modals state
   const [isVisualModalOpen, setIsVisualModalOpen] = useState<boolean>(false);
+  const [isVoiceLabOpen, setIsVoiceLabOpen] = useState<boolean>(false);
   const [isLangModalOpen, setIsLangModalOpen] = useState<boolean>(false);
   const [langSearch, setLangSearch] = useState<string>('');
   const [langRegionFilter, setLangRegionFilter] = useState<'all' | 'india' | 'global'>('all');
@@ -196,8 +201,53 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
               />
             </section>
 
-            {/* Below the Slider: Two Large, Clearly Distinct Action Buttons */}
-            <section className="w-full max-w-md mx-auto pt-1">
+            {/* Below the Slider: Featured Text-to-Speech & Recorded Voice Message Input Button */}
+            <section className="w-full max-w-md mx-auto pt-1 space-y-3">
+              {/* Feature Action Button: Text-to-Speech & Voice Notes Lab */}
+              <button
+                id="tts-voice-notes-feature-btn"
+                onClick={() => setIsVoiceLabOpen(true)}
+                className="w-full p-3.5 sm:p-4 rounded-3xl bg-gradient-to-br from-[#EAF5FC] via-[#F4FAF8] to-[#E8F8F4] hover:from-[#E0F2FE] hover:to-[#DCFCE7] border-2 border-[#4FA8D8]/50 hover:border-[#4FA8D8] text-left transition-all shadow-md shadow-[#4FA8D8]/20 hover:shadow-lg hover:shadow-[#4FA8D8]/30 hover:scale-101 active:scale-99 group cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#4FA8D8] to-[#4FD8B8] text-white flex items-center justify-center shadow-md shadow-[#4FA8D8]/30 group-hover:scale-105 transition-transform shrink-0">
+                      <Volume2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs sm:text-sm font-extrabold text-[#1E3A3A] group-hover:text-[#216E9B] transition-colors">
+                          Text-to-Speech & Voice Notes
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-full bg-[#4FA8D8]/20 text-[#216E9B] text-[9px] font-black uppercase tracking-wider">
+                          Audio Lab
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#6B8A87] font-medium leading-relaxed pt-0.5">
+                        Hear AI speak via natural <strong className="text-[#216E9B]">Text-to-Speech</strong> & reply with your own <strong className="text-[#E06640]">recorded voice messages</strong>.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-xl bg-white text-[#216E9B] border border-[#4FA8D8]/30 flex items-center justify-center shrink-0 group-hover:translate-x-0.5 transition-transform shadow-2xs">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Feature capability badges */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2.5 border-t border-[#4FA8D8]/20">
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/90 text-[#216E9B] border border-[#4FA8D8]/30 flex items-center gap-1">
+                    <Volume2 className="w-3 h-3 text-[#4FA8D8]" /> AI Text-to-Speech
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/90 text-[#E06640] border border-[#FFB89A] flex items-center gap-1">
+                    <Mic className="w-3 h-3 text-[#E06640]" /> Recorded Voice Input
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/90 text-[#167D68] border border-[#4FD8B8]/40 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#2BB394]" /> Pronunciation Feedback
+                  </span>
+                </div>
+              </button>
+
+              {/* Two Complementary Action Buttons: Visual Lens & Stranger Bridge */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {/* 1. Camera / Visual Translate Button (Warm Coral Pop) */}
                 <button
@@ -205,8 +255,8 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
                   onClick={() => setIsVisualModalOpen(true)}
                   className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-3xl bg-gradient-to-br from-[#FFB89A] via-[#FFA380] to-[#FF8C66] hover:from-[#FFA380] hover:to-[#FF7A50] border border-[#FFB89A]/50 transition-all shadow-md shadow-[#FFB89A]/35 hover:shadow-lg hover:shadow-[#FF8C66]/40 hover:scale-102 active:scale-98 group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white/90 border border-white/80 text-[#D9552E] flex items-center justify-center mb-2 group-hover:scale-110 group-hover:bg-white group-hover:text-[#B83E1A] transition-all shadow-xs">
-                    <ScanLine className="w-6 h-6" />
+                  <div className="w-11 h-11 rounded-2xl bg-white/90 border border-white/80 text-[#D9552E] flex items-center justify-center mb-1.5 group-hover:scale-110 group-hover:bg-white group-hover:text-[#B83E1A] transition-all shadow-xs">
+                    <ScanLine className="w-5 h-5" />
                   </div>
                   <span className="text-xs sm:text-sm font-black text-[#1E3A3A]">
                     Visual Lens
@@ -214,7 +264,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
                   <span className="text-[10px] text-[#4A281E] font-medium line-clamp-1 pt-0.5">
                     Scan Signs & Menus
                   </span>
-                  <span className="mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/80 text-[#9C3818] border border-white/60">
+                  <span className="mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/80 text-[#9C3818] border border-white/60">
                     Google Lens
                   </span>
                 </button>
@@ -225,8 +275,8 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
                   onClick={onOpenStrangerBridge}
                   className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-3xl bg-gradient-to-br from-[#4FD8B8] via-[#46C4BD] to-[#4FA8D8] hover:from-[#3EC9A8] hover:to-[#389BCB] border border-[#4FD8B8]/50 transition-all shadow-md shadow-[#4FD8B8]/35 hover:shadow-lg hover:shadow-[#4FA8D8]/40 hover:scale-102 active:scale-98 group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white/90 border border-white/80 text-[#167D68] flex items-center justify-center mb-2 group-hover:scale-110 group-hover:bg-white group-hover:text-[#0D5949] transition-all shadow-xs">
-                    <Languages className="w-6 h-6" />
+                  <div className="w-11 h-11 rounded-2xl bg-white/90 border border-white/80 text-[#167D68] flex items-center justify-center mb-1.5 group-hover:scale-110 group-hover:bg-white group-hover:text-[#0D5949] transition-all shadow-xs">
+                    <Languages className="w-5 h-5" />
                   </div>
                   <span className="text-xs sm:text-sm font-black text-[#0A302A]">
                     Stranger Bridge
@@ -234,7 +284,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
                   <span className="text-[10px] text-[#14483E] font-medium line-clamp-1 pt-0.5">
                     Live Talk with Strangers
                   </span>
-                  <span className="mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/80 text-[#0F5446] border border-white/60">
+                  <span className="mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/80 text-[#0F5446] border border-white/60">
                     Live Interpreter
                   </span>
                 </button>
@@ -327,6 +377,14 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({
         onClose={() => setIsVisualModalOpen(false)}
         userLanguage={languages.find((l) => l.code === 'en') || languages[0]}
         targetLanguage={selectedLanguage}
+      />
+
+      {/* Text-to-Speech & Recorded Voice Message Input Lab Modal */}
+      <VoiceMessageLabModal
+        isOpen={isVoiceLabOpen}
+        onClose={() => setIsVoiceLabOpen(false)}
+        targetLanguage={selectedLanguage}
+        currentLevel={selectedLevel}
       />
 
       {/* Target Language Picker Overlay Modal */}
