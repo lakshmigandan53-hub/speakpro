@@ -1,0 +1,6 @@
+{
+  "name": "Phrasebook Buddy",
+  "description": "Multimodal AI language learning partner and Instant Speaking to Stranger live interpreter bridge, featuring automatic dual language identification and Google Translate conversation mode for Indian and Global languages.",
+  "requestFramePermissions": ["microphone", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
