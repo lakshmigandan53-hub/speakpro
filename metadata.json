@@ -1,6 +1,6 @@
 {
-  "name": "Phrasebook Buddy",
-  "description": "Multimodal AI language learning partner and Instant Speaking to Stranger live interpreter bridge, featuring automatic dual language identification and Google Translate conversation mode for Indian and Global languages.",
+  "name": "Talkie",
+  "description": "Talkie — Multimodal AI language learning partner and Instant Speaking to Stranger live interpreter bridge, featuring independent per-language progression, dual language identification, and Gemini Live Native Voice.",
   "requestFramePermissions": ["microphone", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

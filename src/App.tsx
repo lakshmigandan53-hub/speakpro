@@ -1,9 +1,9 @@
 /**
- * Phrasebook Buddy — Multimodal AI Language-Learning Partner
- * Powered by Gemini Live Native Audio (gemini-3.1-flash-live-preview) & Gemini 3.6 Flash
+ * Talkie — Multimodal AI Language-Learning Partner & Instant Interpreter
+ * Powered by Gemini Live Native Audio & Gemini Multimodal Flash
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SCENARIOS } from './data/scenarios';
 import { SUPPORTED_LANGUAGES } from './data/languages';
 import {
@@ -12,18 +12,41 @@ import {
   ProficiencyLevel,
   Scenario,
   SessionEvaluation,
+  LanguageProgressMap,
+  LanguageProgress,
 } from './types';
 import { useLiveVoice } from './hooks/useLiveVoice';
 import { ScenarioPicker } from './components/ScenarioPicker';
 import { LiveSessionView } from './components/LiveSessionView';
 import { SessionReviewModal } from './components/SessionReviewModal';
 import { StrangerBridgeView } from './components/StrangerBridgeView';
+import {
+  loadAllLanguageProgress,
+  saveAllLanguageProgress,
+  getOrInitLanguageProgress,
+  createDefaultLanguageProgress,
+} from './utils/languageProgressStore';
 
 export default function App() {
   const [allScenarios, setAllScenarios] = useState<Scenario[]>(SCENARIOS);
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(SUPPORTED_LANGUAGES[0]); // Spanish default
-  const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]); // Greeting Intro default
-  const [selectedLevel, setSelectedLevel] = useState<ProficiencyLevel>('intermediate');
+  
+  // Independent per-language progress dictionary
+  const [languageProgressMap, setLanguageProgressMap] = useState<LanguageProgressMap>(() => loadAllLanguageProgress());
+
+  // Active target language
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(() => {
+    // Default to Spanish (or first supported language)
+    return SUPPORTED_LANGUAGES[0];
+  });
+
+  // Current language's active progress
+  const activeLanguageProgress: LanguageProgress =
+    languageProgressMap[selectedLanguage.code] || createDefaultLanguageProgress(selectedLanguage.code);
+
+  // Active level derived strictly from active language's saved progress
+  const selectedLevel: ProficiencyLevel = activeLanguageProgress.level || 'beginner';
+
+  const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]);
   const [selectedMode, setSelectedMode] = useState<InteractionMode>('speech-to-speech');
 
   // Application View: 'picker' | 'live' | 'stranger-bridge'
@@ -33,6 +56,30 @@ export default function App() {
   const [sessionEvaluation, setSessionEvaluation] = useState<SessionEvaluation | null>(null);
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+
+  // Handle switching language
+  const handleSelectLanguage = (newLanguage: Language) => {
+    const { progress: targetProgress, updatedMap } = getOrInitLanguageProgress(languageProgressMap, newLanguage.code);
+    setLanguageProgressMap(updatedMap);
+    setSelectedLanguage(newLanguage);
+  };
+
+  // Handle manual level selection in Roadmap/Levels tab
+  const handleSelectLevel = (newLevel: ProficiencyLevel) => {
+    const currentProg = languageProgressMap[selectedLanguage.code] || createDefaultLanguageProgress(selectedLanguage.code);
+    const updatedProg: LanguageProgress = {
+      ...currentProg,
+      level: newLevel,
+      hasPracticed: true,
+      lastPracticedAt: Date.now(),
+    };
+    const updatedMap: LanguageProgressMap = {
+      ...languageProgressMap,
+      [selectedLanguage.code]: updatedProg,
+    };
+    setLanguageProgressMap(updatedMap);
+    saveAllLanguageProgress(updatedMap);
+  };
 
   // Gemini Live Voice & Multimodal hook
   const {
@@ -75,6 +122,35 @@ export default function App() {
   const handleEndSession = async () => {
     const durationSeconds = Math.max(15, Math.round((Date.now() - sessionStartTime) / 1000));
     stopSession();
+
+    // Reward XP and update language-specific progress
+    const currentProg = languageProgressMap[selectedLanguage.code] || createDefaultLanguageProgress(selectedLanguage.code);
+    const earnedXP = 180 + Math.min(300, Math.round(durationSeconds * 2));
+    const newCompleted = Array.from(new Set([...currentProg.completedMilestoneIds, selectedScenario.id]));
+    const additionalMins = Math.max(1, Math.round(durationSeconds / 60));
+
+    const updatedProg: LanguageProgress = {
+      ...currentProg,
+      xp: currentProg.xp + earnedXP,
+      speakingTimeMinutes: currentProg.speakingTimeMinutes + additionalMins,
+      conversationalTurns: currentProg.conversationalTurns + (transcript.length || 4),
+      completedMilestoneIds: newCompleted,
+      fluencyScore: Math.min(99, Math.max(currentProg.fluencyScore, 70 + Math.min(25, newCompleted.length * 5))),
+      hasPracticed: true,
+      lastPracticedAt: Date.now(),
+      stageProgress: {
+        beginner: Math.min(100, (currentProg.stageProgress.beginner || 0) + (selectedLevel === 'beginner' ? 25 : 0)),
+        intermediate: Math.min(100, (currentProg.stageProgress.intermediate || 0) + (selectedLevel === 'intermediate' ? 25 : 0)),
+        advanced: Math.min(100, (currentProg.stageProgress.advanced || 0) + (selectedLevel === 'advanced' ? 20 : 0)),
+      },
+    };
+
+    const updatedMap: LanguageProgressMap = {
+      ...languageProgressMap,
+      [selectedLanguage.code]: updatedProg,
+    };
+    setLanguageProgressMap(updatedMap);
+    saveAllLanguageProgress(updatedMap);
 
     try {
       const res = await fetch('/api/session-summary', {
@@ -151,17 +227,14 @@ export default function App() {
           scenarios={allScenarios}
           languages={SUPPORTED_LANGUAGES}
           selectedLanguage={selectedLanguage}
-          onSelectLanguage={(lang) => setSelectedLanguage(lang)}
+          onSelectLanguage={handleSelectLanguage}
           selectedLevel={selectedLevel}
-          onSelectLevel={(lvl) => setSelectedLevel(lvl)}
-          selectedMode={selectedMode}
-          onSelectMode={(mode) => {
-            setSelectedMode(mode);
-            switchInteractionMode(mode);
-          }}
+          onSelectLevel={handleSelectLevel}
           onSelectScenario={handleStartRoleplay}
           onAddCustomScenario={handleAddCustomScenario}
           onOpenStrangerBridge={() => setCurrentView('stranger-bridge')}
+          progress={activeLanguageProgress}
+          allProgress={languageProgressMap}
         />
       )}
 
@@ -223,3 +296,4 @@ export default function App() {
     </div>
   );
 }
+

@@ -8,13 +8,7 @@ import {
   RefreshCw,
   Eye,
   CheckCircle2,
-  Layers,
-  Globe2,
-  FileText,
-  AlertCircle,
-  Maximize2,
-  ArrowRight,
-  Languages,
+  ScanLine,
 } from 'lucide-react';
 import { Language, VisualTranslateResult } from '../types';
 
@@ -100,41 +94,39 @@ const SAMPLE_PRESETS = [
       contextSummary: 'Café Entrance Welcome & Operating Schedule',
       keyTerms: [
         { original: 'Bienvenue', translation: 'Welcome', category: 'Greeting' },
-        { original: 'Ouvert tous les jours', translation: 'Open every day', category: 'Schedule' },
-        { original: 'Service en terrasse', translation: 'Terrace / outdoor dining service', category: 'Service' },
-        { original: 'Carte bancaire acceptée', translation: 'Credit / debit cards accepted', category: 'Payment' },
+        { original: 'Ouvert tous les jours', translation: 'Open every day', category: 'Hours' },
+        { original: 'Service en terrasse', translation: 'Outdoor terrace service', category: 'Dining' },
+        { original: 'Carte bancaire', translation: 'Credit/Bank card', category: 'Payment' },
       ],
       detectedBlocks: [
-        { original: 'Bienvenue au Café', translated: 'Welcome to the Café', type: 'Greeting' },
-        { original: '7h - 23h', translated: '7:00 AM - 11:00 PM', type: 'Hours' },
-        { original: 'Carte bancaire', translated: 'Credit cards accepted', type: 'Payment' },
+        { original: 'Ouvert tous les jours 7h - 23h', translated: 'Open every day 7 AM - 11 PM', type: 'Hours' },
+        { original: 'Service en terrasse', translated: 'Terrace service', type: 'Service' },
       ],
     },
   },
   {
-    id: 'delhi-street',
-    title: 'Delhi Street Market Board',
-    category: 'Storefront',
+    id: 'delhi-sign',
+    title: 'Delhi Metro Station Signboard',
+    category: 'Signage',
     flag: '🇮🇳',
     lang: 'Hindi',
-    previewText: 'ताजा मसाले • शुद्ध देशी घी • उचित मूल्य की दुकान',
+    previewText: 'प्रवेश द्वार १ • कश्मीरी गेट • येलो लाइन • टिकट काउंटर',
     image:
-      'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80',
     fallbackResult: {
       detectedLanguage: { name: 'Hindi', code: 'hi', nativeName: 'हिन्दी', flag: '🇮🇳', confidence: 0.99 },
-      originalText: 'ताजा मसाले एवं जड़ी-बूटियां • शुद्ध देशी घी • उचित मूल्य की दुकान • स्वागतम',
-      translatedText: 'Fresh Spices & Herbs • Pure Country Ghee • Fair Price Store • Welcome',
-      phoneticReading: 'Taaza masaale evam jari-bootiyan • Shuddh deshi ghee • Uchit moolya ki dukaan • Svaagatam',
-      contextSummary: 'Traditional Ayurvedic Spice & Grocery Shop Board',
+      originalText: 'प्रवेश द्वार १ • कश्मीरी गेट मेट्रो स्टेशन • येलो लाइन • टिकट काउंटर आगे है',
+      translatedText: 'Entry Gate 1 • Kashmere Gate Metro Station • Yellow Line • Ticket Counter Ahead',
+      phoneticReading: 'Pravesh Dwaar Ek • Kashmere Gate Metro Station • Yellow Line • Ticket Counter aage hai',
+      contextSummary: 'New Delhi Metro Transit Direction Board',
       keyTerms: [
-        { original: 'ताजा मसाले (Taaza Masaale)', translation: 'Fresh Spices', category: 'Goods' },
-        { original: 'शुद्ध देशी घी (Shuddh Ghee)', translation: 'Pure clarified butter', category: 'Goods' },
-        { original: 'उचित मूल्य (Uchit Moolya)', translation: 'Fair / fixed prices', category: 'Pricing' },
-        { original: 'स्वागतम (Svaagatam)', translation: 'Welcome', category: 'Greeting' },
+        { original: 'प्रवेश द्वार (Pravesh Dwaar)', translation: 'Entry Gate', category: 'Navigation' },
+        { original: 'कश्मीरी गेट (Kashmere Gate)', translation: 'Kashmere Gate (Major Interchange)', category: 'Landmark' },
+        { original: 'आगे है (Aage hai)', translation: 'Is Ahead', category: 'Direction' },
       ],
       detectedBlocks: [
-        { original: 'ताजा मसाले', translated: 'Fresh Spices', type: 'Product' },
-        { original: 'उचित मूल्य की दुकान', translated: 'Fair Price Shop', type: 'Store Type' },
+        { original: 'प्रवेश द्वार १', translated: 'Entry Gate 1', type: 'Gate' },
+        { original: 'येलो लाइन', translated: 'Yellow Line', type: 'Metro Line' },
       ],
     },
   },
@@ -146,31 +138,20 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
   userLanguage,
   targetLanguage,
 }) => {
-  const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'presets'>('camera');
+  const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'presets'>('presets');
+  const [isLiveCameraActive, setIsLiveCameraActive] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [result, setResult] = useState<VisualTranslateResult | null>(null);
-  const [isLiveCameraActive, setIsLiveCameraActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  // Initialize camera when camera tab is selected
-  useEffect(() => {
-    if (isOpen && activeTab === 'camera') {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-    return () => {
-      stopCamera();
-    };
-  }, [isOpen, activeTab]);
-
+  // Initialize camera stream
   const startCamera = async () => {
     setCameraError(null);
     try {
@@ -182,11 +163,10 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
         mediaStreamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.play();
-          setIsLiveCameraActive(true);
         }
+        setIsLiveCameraActive(true);
       } else {
-        setCameraError('Camera access not supported in this browser.');
+        throw new Error('Webcam not supported');
       }
     } catch (err: any) {
       console.warn('Camera access denied or unavailable:', err);
@@ -244,7 +224,7 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
     setTimeout(() => {
       setResult(preset.fallbackResult);
       setIsProcessing(false);
-    }, 800);
+    }, 600);
   };
 
   // Run visual AI translation via server endpoint
@@ -298,21 +278,13 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
 
   // Play audio pronunciation of translated/original text
   const playPronunciation = (text: string) => {
-    if (!text || isPlayingAudio) return;
-
-    if ('speechSynthesis' in window) {
-      try {
-        setIsPlayingAudio(true);
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = result?.detectedLanguage.code || targetLanguage.code || 'en-US';
-        utterance.rate = 0.9;
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
-        window.speechSynthesis.speak(utterance);
-      } catch (e) {
-        setIsPlayingAudio(false);
-      }
-    }
+    if (!('speechSynthesis' in window)) return;
+    setIsPlayingAudio(true);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = targetLanguage.code === 'hi' ? 'hi-IN' : targetLanguage.code === 'es' ? 'es-ES' : 'en-US';
+    utterance.onend = () => setIsPlayingAudio(false);
+    utterance.onerror = () => setIsPlayingAudio(false);
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleRetake = () => {
@@ -323,27 +295,37 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+      setSelectedImage(null);
+      setResult(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-5 py-4 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#1E3A3A]/40 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl bg-white border border-[#E2EFEA] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Modal Top Header */}
+        <div className="p-4 sm:p-5 border-b border-[#E2EFEA] flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-              <Camera className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FFB89A] via-[#FFA380] to-[#FF8C66] p-0.5 shadow-md shadow-[#FFB89A]/30 flex items-center justify-center">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-[#D9552E]">
+                <ScanLine className="w-5 h-5" />
+              </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                <h2 className="text-base sm:text-lg font-black text-[#1E3A3A]">
                   Visual Lens Translate
                 </h2>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FFF4EF] text-[#E06640] border border-[#FFB89A]">
                   Google Lens Mode
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6B8A87]">
                 Point at street signs, menus, or labels for instant translation into {userLanguage.name}
               </p>
             </div>
@@ -355,7 +337,7 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
               stopCamera();
               onClose();
             }}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[#F4FAF8] hover:bg-[#E2EFEA] text-[#6B8A87] hover:text-[#1E3A3A] flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -363,13 +345,16 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
 
         {/* Mode Switch Tabs */}
         {!selectedImage && (
-          <div className="flex items-center justify-center gap-2 p-3 bg-slate-950/40 border-b border-slate-800">
+          <div className="flex items-center justify-center gap-2 p-3 bg-[#F4FAF8] border-b border-[#E2EFEA]">
             <button
-              onClick={() => setActiveTab('camera')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              onClick={() => {
+                setActiveTab('camera');
+                startCamera();
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'camera'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-gradient-to-r from-[#4FD8B8] to-[#4FA8D8] text-[#0A302A] shadow-sm'
+                  : 'bg-white text-[#6B8A87] hover:text-[#1E3A3A] border border-[#E2EFEA]'
               }`}
             >
               <Camera className="w-3.5 h-3.5" />
@@ -380,24 +365,27 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                 setActiveTab('upload');
                 fileInputRef.current?.click();
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'upload'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-gradient-to-r from-[#4FD8B8] to-[#4FA8D8] text-[#0A302A] shadow-sm'
+                  : 'bg-white text-[#6B8A87] hover:text-[#1E3A3A] border border-[#E2EFEA]'
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Upload Photo</span>
             </button>
             <button
-              onClick={() => setActiveTab('presets')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              onClick={() => {
+                setActiveTab('presets');
+                stopCamera();
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'presets'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-gradient-to-r from-[#4FD8B8] to-[#4FA8D8] text-[#0A302A] shadow-sm'
+                  : 'bg-white text-[#6B8A87] hover:text-[#1E3A3A] border border-[#E2EFEA]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Sample Signs</span>
             </button>
             <input
@@ -414,7 +402,7 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* CAMERA VIEW */}
           {!selectedImage && activeTab === 'camera' && (
-            <div className="relative aspect-video sm:aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex flex-col items-center justify-center">
+            <div className="relative aspect-video sm:aspect-[16/10] bg-[#1E3A3A] rounded-2xl overflow-hidden border border-[#E2EFEA] flex flex-col items-center justify-center">
               {isLiveCameraActive ? (
                 <>
                   <video
@@ -425,18 +413,18 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                   {/* Google Lens Viewfinder Overlay */}
-                  <div className="absolute inset-8 sm:inset-14 border-2 border-dashed border-indigo-400/70 rounded-2xl pointer-events-none flex flex-col justify-between p-3">
+                  <div className="absolute inset-8 sm:inset-14 border-2 border-dashed border-[#4FD8B8] rounded-2xl pointer-events-none flex flex-col justify-between p-3">
                     <div className="flex justify-between">
-                      <div className="w-6 h-6 border-t-3 border-l-3 border-indigo-400 rounded-tl-lg" />
-                      <div className="w-6 h-6 border-t-3 border-r-3 border-indigo-400 rounded-tr-lg" />
+                      <div className="w-6 h-6 border-t-3 border-l-3 border-[#4FD8B8] rounded-tl-lg" />
+                      <div className="w-6 h-6 border-t-3 border-r-3 border-[#4FD8B8] rounded-tr-lg" />
                     </div>
-                    <div className="self-center px-3 py-1 bg-slate-950/80 backdrop-blur-md rounded-full text-[11px] text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 shadow-lg">
-                      <Eye className="w-3 h-3 text-indigo-400 animate-pulse" />
+                    <div className="self-center px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[11px] text-[#167D68] border border-[#4FD8B8]/50 flex items-center gap-1.5 shadow-md font-bold">
+                      <Eye className="w-3 h-3 text-[#167D68] animate-pulse" />
                       <span>Point at signs, menus, or labels</span>
                     </div>
                     <div className="flex justify-between">
-                      <div className="w-6 h-6 border-b-3 border-l-3 border-indigo-400 rounded-bl-lg" />
-                      <div className="w-6 h-6 border-b-3 border-r-3 border-indigo-400 rounded-br-lg" />
+                      <div className="w-6 h-6 border-b-3 border-l-3 border-[#4FD8B8] rounded-bl-lg" />
+                      <div className="w-6 h-6 border-b-3 border-r-3 border-[#4FD8B8] rounded-br-lg" />
                     </div>
                   </div>
 
@@ -445,33 +433,33 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                     <button
                       id="capture-photo-lens-btn"
                       onClick={handleCapturePhoto}
-                      className="w-16 h-16 rounded-full bg-white p-1 shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center cursor-pointer border-4 border-indigo-500"
+                      className="w-16 h-16 rounded-full bg-white p-1 shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center cursor-pointer border-4 border-[#4FD8B8]"
                     >
-                      <div className="w-full h-full rounded-full bg-indigo-600 flex items-center justify-center text-white">
-                        <Camera className="w-6 h-6" />
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-[#4FD8B8] to-[#4FA8D8] flex items-center justify-center text-white">
+                        <Camera className="w-6 h-6 text-[#0A302A]" />
                       </div>
                     </button>
                   </div>
                 </>
               ) : (
                 <div className="text-center p-6 max-w-md space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-[#4FD8B8]">
                     <Camera className="w-7 h-7" />
                   </div>
-                  <h3 className="text-sm font-semibold text-white">Live Camera Preview</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-sm font-bold text-white">Live Camera Preview</h3>
+                  <p className="text-xs text-slate-300">
                     {cameraError || 'Click below to grant camera access or try our pre-loaded signs.'}
                   </p>
                   <div className="flex items-center justify-center gap-2 pt-2">
                     <button
                       onClick={startCamera}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#4FD8B8] to-[#4FA8D8] text-[#0A302A] text-xs font-bold shadow-md cursor-pointer"
                     >
                       Enable Camera
                     </button>
                     <button
                       onClick={() => setActiveTab('presets')}
-                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold cursor-pointer border border-white/20"
                     >
                       Use Sample Signs
                     </button>
@@ -485,32 +473,32 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
           {!selectedImage && activeTab === 'presets' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
+                <p className="text-xs font-bold text-[#6B8A87] uppercase tracking-wider font-mono">
                   Select a Real-World Sign or Menu
                 </p>
-                <span className="text-xs text-indigo-400 font-medium">Instant OCR & AI Analysis</span>
+                <span className="text-xs text-[#216E9B] font-bold">Instant OCR & AI Analysis</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {SAMPLE_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => handleSelectPreset(preset)}
-                    className="flex gap-3 p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 transition-all text-left group cursor-pointer"
+                    className="flex gap-3 p-3 rounded-2xl bg-[#F4FAF8] hover:bg-white border border-[#E2EFEA] hover:border-[#4FA8D8]/60 transition-all text-left group cursor-pointer shadow-2xs hover:shadow-xs"
                   >
                     <img
                       src={preset.image}
                       alt={preset.title}
-                      className="w-20 h-20 rounded-xl object-cover border border-slate-700 shrink-0 group-hover:scale-102 transition-transform"
+                      className="w-20 h-20 rounded-xl object-cover border border-[#E2EFEA] shrink-0 group-hover:scale-102 transition-transform"
                     />
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm">{preset.flag}</span>
-                        <span className="text-xs font-bold text-white line-clamp-1">{preset.title}</span>
+                        <span className="text-xs font-bold text-[#1E3A3A] line-clamp-1">{preset.title}</span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-mono">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#6B8A87] border border-[#E2EFEA] font-bold">
                         {preset.category}
                       </span>
-                      <p className="text-[11px] text-slate-400 line-clamp-1 font-mono">{preset.previewText}</p>
+                      <p className="text-[11px] text-[#6B8A87] line-clamp-1 font-mono">{preset.previewText}</p>
                     </div>
                   </button>
                 ))}
@@ -522,18 +510,18 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
           {selectedImage && (
             <div className="space-y-4">
               {/* Image with Lens Overlay */}
-              <div className="relative aspect-video sm:aspect-[16/9] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
+              <div className="relative aspect-video sm:aspect-[16/9] bg-slate-900 rounded-2xl overflow-hidden border border-[#E2EFEA]">
                 <img src={selectedImage} alt="Captured signage" className="w-full h-full object-cover" />
                 
                 {isProcessing && (
-                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-full border-3 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+                  <div className="absolute inset-0 bg-[#1E3A3A]/70 backdrop-blur-xs flex flex-col items-center justify-center gap-3">
+                    <div className="w-12 h-12 rounded-full border-3 border-[#4FD8B8]/30 border-t-[#4FD8B8] animate-spin" />
                     <div className="text-center space-y-1">
                       <p className="text-sm font-bold text-white flex items-center justify-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                        <Sparkles className="w-4 h-4 text-[#FF8C66] animate-pulse" />
                         Scanning Real-World Text...
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-300">
                         Identifying language & generating native translation
                       </p>
                     </div>
@@ -543,30 +531,30 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                 {/* Retake / Rescan Floating Button */}
                 <button
                   onClick={handleRetake}
-                  className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-slate-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-md cursor-pointer transition-transform hover:scale-105"
+                  className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white border border-[#E2EFEA] text-[#1E3A3A] text-xs font-bold flex items-center gap-1.5 shadow-md backdrop-blur-md cursor-pointer transition-transform hover:scale-105"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-3.5 h-3.5 text-[#216E9B]" />
                   <span>Scan Another</span>
                 </button>
               </div>
 
               {/* Translation Outcome Card */}
               {result && !isProcessing && (
-                <div className="space-y-3 bg-slate-950/60 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                <div className="space-y-3 bg-[#F4FAF8] border border-[#E2EFEA] rounded-2xl p-4 sm:p-5">
                   {/* Language Detection Header */}
-                  <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-800">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-[#E2EFEA]">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{result.detectedLanguage.flag}</span>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white">
+                          <span className="text-xs font-bold text-[#1E3A3A]">
                             Detected {result.detectedLanguage.name}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-[#E8F8F4] text-[#167D68] border border-[#4FD8B8]/50 font-bold">
                             {Math.round((result.detectedLanguage.confidence || 0.95) * 100)}% Match
                           </span>
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-[#6B8A87]">
                           {result.contextSummary}
                         </span>
                       </div>
@@ -576,9 +564,9 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                       <button
                         onClick={() => playPronunciation(result.originalText)}
                         disabled={isPlayingAudio}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#EAF5FC] border border-[#4FA8D8]/50 text-[#216E9B] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
-                        <Volume2 className={`w-3.5 h-3.5 ${isPlayingAudio ? 'animate-bounce text-indigo-400' : ''}`} />
+                        <Volume2 className={`w-3.5 h-3.5 ${isPlayingAudio ? 'animate-bounce text-[#4FA8D8]' : ''}`} />
                         <span>{isPlayingAudio ? 'Speaking...' : 'Listen Original'}</span>
                       </button>
                     </div>
@@ -587,31 +575,31 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                   {/* Primary Translation Split */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                     {/* Original Script */}
-                    <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
+                    <div className="p-3.5 rounded-xl bg-white border border-[#E2EFEA] space-y-1.5 shadow-2xs">
+                      <span className="text-[10px] font-mono font-bold uppercase text-[#6B8A87] tracking-wider">
                         Original Signage Text ({result.detectedLanguage.name})
                       </span>
-                      <p className="text-sm font-bold text-white leading-relaxed">
+                      <p className="text-sm font-bold text-[#1E3A3A] leading-relaxed">
                         {result.originalText}
                       </p>
                       {result.phoneticReading && (
-                        <p className="text-xs text-indigo-300/90 font-mono italic">
+                        <p className="text-xs text-[#216E9B] font-mono italic">
                           🗣️ {result.phoneticReading}
                         </p>
                       )}
                     </div>
 
                     {/* Translated Script */}
-                    <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-1.5">
+                    <div className="p-3.5 rounded-xl bg-[#E8F8F4] border border-[#4FD8B8]/60 space-y-1.5 shadow-2xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold uppercase text-emerald-400 tracking-wider">
+                        <span className="text-[10px] font-mono font-bold uppercase text-[#167D68] tracking-wider">
                           Translated ({userLanguage.name})
                         </span>
-                        <span className="text-[10px] text-emerald-300/70 font-mono">
+                        <span className="text-[10px] text-[#167D68] font-bold">
                           Google Lens Overlay
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-emerald-100 leading-relaxed">
+                      <p className="text-sm font-extrabold text-[#0A302A] leading-relaxed">
                         {result.translatedText}
                       </p>
                     </div>
@@ -620,22 +608,22 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
                   {/* Extracted Key Terms & Vocabulary */}
                   {result.keyTerms && result.keyTerms.length > 0 && (
                     <div className="pt-2 space-y-2">
-                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-bold text-[#1E3A3A] flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FF8C66]" />
                         Vocabulary & Key Terms Breakdown
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {result.keyTerms.map((term, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs"
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#E2EFEA] text-xs shadow-2xs"
                           >
                             <div>
-                              <span className="font-bold text-white block">{term.original}</span>
-                              <span className="text-slate-300 text-[11px]">{term.translation}</span>
+                              <span className="font-bold text-[#1E3A3A] block">{term.original}</span>
+                              <span className="text-[#6B8A87] text-[11px]">{term.translation}</span>
                             </div>
                             {term.category && (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#F4FAF8] text-[#6B8A87] border border-[#E2EFEA]">
                                 {term.category}
                               </span>
                             )}
@@ -651,17 +639,17 @@ export const VisualTranslateModal: React.FC<VisualTranslateModalProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="px-5 py-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <div className="px-5 py-3 bg-[#F4FAF8] border-t border-[#E2EFEA] flex items-center justify-between text-xs text-[#6B8A87]">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Gemini Vision OCR & Translation Active</span>
+            <span className="w-2 h-2 rounded-full bg-[#167D68] animate-pulse" />
+            <span className="font-medium text-[#1E3A3A]">Gemini Vision OCR & Translation Active</span>
           </div>
           <button
             onClick={() => {
               stopCamera();
               onClose();
             }}
-            className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-xl bg-white hover:bg-[#E2EFEA] border border-[#E2EFEA] text-[#1E3A3A] font-bold transition-colors cursor-pointer shadow-2xs"
           >
             Done
           </button>

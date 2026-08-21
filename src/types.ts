@@ -200,3 +200,35 @@ export interface StrangerBridgeMessage {
   detectedConfidence?: number;
 }
 
+export interface SavedPhraseItem {
+  id: string;
+  original: string;
+  phonetic: string;
+  translation: string;
+  category: string;
+  mastered: boolean;
+}
+
+export interface LanguageProgress {
+  languageCode: LanguageCode;
+  level: ProficiencyLevel;
+  xp: number;
+  streakDays: number;
+  fluencyScore: number;
+  speakingTimeMinutes: number;
+  conversationalTurns: number;
+  grammarAccuracy: number;
+  completedMilestoneIds: string[];
+  stageProgress: {
+    beginner: number;
+    intermediate: number;
+    advanced: number;
+  };
+  savedPhrases: SavedPhraseItem[];
+  hasPracticed: boolean;
+  lastPracticedAt: number;
+}
+
+export type LanguageProgressMap = Record<string, LanguageProgress>;
+
+
